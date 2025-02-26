@@ -345,7 +345,8 @@ fun ProfileScreen(onNavigateToEditProfile: () -> Unit) {
     var errorMessage by remember { mutableStateOf("") }
     val context = LocalContext.current
 
-    BarberShopService.getBarberShopProfile(context = context, barberShopId = 140) {profile, error ->
+    BarberShopService.getBarberShopProfile(context = context, barberShopId = 149
+    ) {profile, error ->
         if (profile != null) {
             barbershop = profile
         } else {
