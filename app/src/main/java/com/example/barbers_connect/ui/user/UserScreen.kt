@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PersonAdd
@@ -31,10 +33,12 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.NavHost
+import com.example.barbers_connect.model.BarberShop
 import com.example.barbers_connect.model.User
+import com.example.barbers_connect.service.BarberShopService
 
 @Composable
-fun UserScreen(navController: NavHostController, onNavigateToLogin: () -> Unit, onNavigateToRegister: () -> Unit) {
+fun UserScreen(navController: NavHostController, onNavigateToLogin: () -> Unit, onNavigateToRegister: () -> Unit, onNavigateToProfile: () -> Unit) {
     MaterialTheme(
         colorScheme = ColorScheme(
             primary = Color(0xFF795548),
@@ -76,7 +80,7 @@ fun UserScreen(navController: NavHostController, onNavigateToLogin: () -> Unit, 
         )
     ) {
         Scaffold(
-            bottomBar = { BottomNavigationBar(onNavigateToLogin, onNavigateToRegister) }
+            bottomBar = { BottomNavigationBar(onNavigateToLogin, onNavigateToRegister,onNavigateToProfile) }
         ) { paddingValues ->
             NavHost(
                 navController = navController,
@@ -85,20 +89,21 @@ fun UserScreen(navController: NavHostController, onNavigateToLogin: () -> Unit, 
             ) {
                 composable("login") { LoginScreen(onNavigateToRegister) }
                 composable("register") { RegisterScreen(onNavigateToLogin) }
+                composable("profile") {ProfileScreen(onNavigateToProfile)}
             }
         }
     }
 }
 
 @Composable
-fun BottomNavigationBar(onNavigateToLogin: () -> Unit, onNavigateToRegister: () -> Unit) {
+fun BottomNavigationBar(onNavigateToLogin: () -> Unit, onNavigateToRegister: () -> Unit, onNavigateToProfile: () -> Unit) {
     val selectedColor = Color(0xFF4CAF50)
     val defaultColor = Color.White
     val backgroundColor = Color(0xFF795548)
 
     NavigationBar(containerColor = backgroundColor, tonalElevation = 8.dp) {
-        val items = listOf("Login" to Icons.Default.Person, "Cadastro" to Icons.Default.PersonAdd)
-        val actions = listOf(onNavigateToLogin, onNavigateToRegister)
+        val items = listOf("Login" to Icons.Default.Person, "Cadastro" to Icons.Default.PersonAdd,"Perfil" to Icons.Default.Person)
+        val actions = listOf(onNavigateToLogin, onNavigateToRegister, onNavigateToProfile)
         var selectedItem by remember { mutableStateOf(0) }
 
         items.forEachIndexed { index, (label, icon) ->
@@ -188,6 +193,123 @@ fun LoginScreen(onNavigateToRegister: () -> Unit) {
         }
     }
 }
+
+@Composable
+fun ProfileScreen(onNavigateToEditProfile: () -> Unit) {
+    // Fetch the profile data
+    var barbershop by remember { mutableStateOf<BarberShop?>(null) }
+    var errorMessage by remember { mutableStateOf("") }
+
+    // Fetch the barbershop profile using the service
+    BarberShopService.getBarberShopProfile { profile, error ->
+        if (profile != null) {
+            barbershop = profile
+        } else {
+            errorMessage = error
+        }
+    }
+
+    // If error message exists, display it
+    if (errorMessage.isNotEmpty()) {
+        Text(text = errorMessage, color = Color.Red)
+    }
+
+    // Display profile data once it is fetched
+    barbershop?.let {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()), // Make the content scrollable
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Top
+        ) {
+            Text(
+                text = "Barbershop Profile",
+                style = MaterialTheme.typography.headlineLarge,
+                color = Color(0xFF795548)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedTextField(
+                value = it.name,
+                onValueChange = {},
+                label = { Text("Barbershop Name", color = Color(0xFF795548)) },
+                readOnly = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = it.description,
+                onValueChange = {},
+                label = { Text("Description", color = Color(0xFF795548)) },
+                readOnly = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = it.address,
+                onValueChange = {},
+                label = { Text("Address", color = Color(0xFF795548)) },
+                readOnly = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = it.phone,
+                onValueChange = {},
+                label = { Text("Phone", color = Color(0xFF795548)) },
+                readOnly = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = it.startShift,
+                onValueChange = {},
+                label = { Text("Start Shift", color = Color(0xFF795548)) },
+                readOnly = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = it.endShift,
+                onValueChange = {},
+                label = { Text("End Shift", color = Color(0xFF795548)) },
+                readOnly = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = "Available Cuts",
+                style = MaterialTheme.typography.bodyLarge,
+                color = Color(0xFF795548)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            it.tags.forEach { cut ->
+                Text(text = "- $cut", color = Color.Black)
+                Spacer(modifier = Modifier.height(4.dp))
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = onNavigateToEditProfile,
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF795548)),
+                modifier = Modifier.fillMaxWidth(0.75F).padding(top = 16.dp),
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Text(text = "Edit Profile", color = Color.White)
+            }
+        }
+    }
+}
+
 
 @Composable
 fun RegisterScreen(onRegisterClick: () -> Unit) {

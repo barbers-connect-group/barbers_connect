@@ -79,6 +79,7 @@ class MainActivity : ComponentActivity() {
                     navController = navController,
                     onNavigateToLogin = { navController.navigate("login") },
                     onNavigateToRegister = { navController.navigate("register") },
+                    onNavigateToProfile = { navController.navigate("profile") }
                 )
             }
         }
