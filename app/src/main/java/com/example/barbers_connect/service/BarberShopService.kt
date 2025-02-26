@@ -1,5 +1,7 @@
 package com.example.barbers_connect.service
 
+import UserService
+import android.content.Context
 import com.example.barbers_connect.model.BarberShop
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -9,10 +11,11 @@ object BarberShopService {
     private val client = OkHttpClient()
 
     // Function to get the barbershop profile from the server
-    fun getBarberShopProfile(callback: (BarberShop?, String) -> Unit) {
-        // Create the request to fetch the barbershop profile (GET request)
+    fun getBarberShopProfile(context: Context, barberShopId: Int, callback: (BarberShop?, String) -> Unit) {
+        val token = UserService.getToken(context)
         val request = Request.Builder()
-            .url("https://django-deployment-ten.vercel.app/api/barbershop/150") // Change this to your actual API endpoint
+            .url("https://barbersconnectapi.vercel.app/api/barbershop/$barberShopId")
+            .header("Authorization", "token $token")
             .build()
 
         client.newCall(request).enqueue(object : okhttp3.Callback {

@@ -1,5 +1,7 @@
 package com.example.barbers_connect.ui.user
 
+import UserService
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -27,6 +29,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -38,7 +41,9 @@ import com.example.barbers_connect.model.User
 import com.example.barbers_connect.service.BarberShopService
 
 @Composable
-fun UserScreen(navController: NavHostController, onNavigateToLogin: () -> Unit, onNavigateToRegister: () -> Unit, onNavigateToProfile: () -> Unit) {
+fun UserScreen(navController: NavHostController, onNavigateToLogin: () -> Unit,
+               onNavigateToRegister: () -> Unit, onNavigateToProfile: () -> Unit,
+               onNavigateToBarbershops: () -> Unit) {
     MaterialTheme(
         colorScheme = ColorScheme(
             primary = Color(0xFF795548),
@@ -80,23 +85,30 @@ fun UserScreen(navController: NavHostController, onNavigateToLogin: () -> Unit, 
         )
     ) {
         Scaffold(
-            bottomBar = { BottomNavigationBar(onNavigateToLogin, onNavigateToRegister,onNavigateToProfile) }
+            bottomBar = {
+                BottomNavigationBar(
+                    onNavigateToLogin, onNavigateToRegister, onNavigateToProfile,
+                    onNavigateToBarbershops
+                )
+            }
         ) { paddingValues ->
             NavHost(
                 navController = navController,
                 startDestination = "login",
                 modifier = Modifier.padding(paddingValues)
             ) {
-                composable("login") { LoginScreen(onNavigateToRegister) }
+                composable("login") { LoginScreen(onNavigateToRegister, onNavigateToBarbershops) }
                 composable("register") { RegisterScreen(onNavigateToLogin) }
                 composable("profile") {ProfileScreen(onNavigateToProfile)}
+                //composable("barbershops") {BarbershopsScreen()}
             }
         }
     }
 }
 
 @Composable
-fun BottomNavigationBar(onNavigateToLogin: () -> Unit, onNavigateToRegister: () -> Unit, onNavigateToProfile: () -> Unit) {
+fun BottomNavigationBar(onNavigateToLogin: () -> Unit, onNavigateToRegister: () -> Unit,
+                        onNavigateToProfile: () -> Unit, onNavigateToBarbershops: () -> Unit) {
     val selectedColor = Color(0xFF4CAF50)
     val defaultColor = Color.White
     val backgroundColor = Color(0xFF795548)
@@ -132,18 +144,22 @@ fun BottomNavigationBar(onNavigateToLogin: () -> Unit, onNavigateToRegister: () 
 }
 
 @Composable
-fun LoginScreen(onNavigateToRegister: () -> Unit) {
+fun LoginScreen(onNavigateToRegister: () -> Unit, onNavigateToBarbershops: () -> Unit) {
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var successMessage by remember { mutableStateOf("") }
-    var errorMessage by remember { mutableStateOf("") }
+    var message by remember { mutableStateOf<String?>(null)  }
+    val context = LocalContext.current
 
     fun login() {
         val user = User(username, password)
 
-        UserService.login(user) { result ->
-            successMessage = result["successMessage"].toString()
-            errorMessage = result["errorMessage"].toString()
+        UserService.login(context, user) { result ->
+            val status = result["status"].toString()
+            message = result["message"].toString()
+
+            if (status == "success") {
+                onNavigateToBarbershops()
+            }
         }
     }
 
@@ -191,6 +207,12 @@ fun LoginScreen(onNavigateToRegister: () -> Unit) {
                 textDecoration = TextDecoration.Underline
             )
         }
+        LaunchedEffect(message) {
+            message?.let {
+                Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                message = null
+            }
+        }
     }
 }
 
@@ -199,9 +221,9 @@ fun ProfileScreen(onNavigateToEditProfile: () -> Unit) {
     // Fetch the profile data
     var barbershop by remember { mutableStateOf<BarberShop?>(null) }
     var errorMessage by remember { mutableStateOf("") }
+    val context = LocalContext.current
 
-    // Fetch the barbershop profile using the service
-    BarberShopService.getBarberShopProfile { profile, error ->
+    BarberShopService.getBarberShopProfile(context = context, barberShopId = 140) {profile, error ->
         if (profile != null) {
             barbershop = profile
         } else {
