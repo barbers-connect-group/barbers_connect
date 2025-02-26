@@ -80,7 +80,8 @@ class MainActivity : ComponentActivity() {
                     onNavigateToLogin = { navController.navigate("login") },
                     onNavigateToRegister = { navController.navigate("register") },
                     onNavigateToProfile = { navController.navigate("profile") },
-                    onNavigateToBarbershops = { navController.navigate("barbershops") }
+                    onNavigateToBarbershops = { navController.navigate("barbershops") },
+                    onNavigateToUserProfile = { navController.navigate("userprofile") }
                 )
             }
         }
