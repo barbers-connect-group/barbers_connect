@@ -3,9 +3,11 @@ package com.example.barbers_connect.ui.user
 import UserService
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -37,6 +39,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -407,15 +410,15 @@ fun UserProfileItem(label: String, value: String) {
     }
 }
 
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(onNavigateToEditProfile: () -> Unit) {
-    // Fetch the profile data
     var barbershop by remember { mutableStateOf<BarberShop?>(null) }
     var errorMessage by remember { mutableStateOf("") }
     val context = LocalContext.current
 
-    BarberShopService.getBarberShopProfile(context = context, barberShopId = 149
-    ) {profile, error ->
+    BarberShopService.getBarberShopProfile(context = context, barberShopId = 150) { profile, error ->
         if (profile != null) {
             barbershop = profile
         } else {
@@ -423,104 +426,108 @@ fun ProfileScreen(onNavigateToEditProfile: () -> Unit) {
         }
     }
 
-    // If error message exists, display it
     if (errorMessage.isNotEmpty()) {
         Text(text = errorMessage, color = Color.Red)
     }
 
-    // Display profile data once it is fetched
     barbershop?.let {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()), // Make the content scrollable
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top
-        ) {
-            Text(
-                text = "Barbershop Profile",
-                style = MaterialTheme.typography.headlineLarge,
-                color = Color(0xFF795548)
-            )
-            Spacer(modifier = Modifier.height(16.dp))
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            text = it.name,
+                            style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
+                            color = Color.White
+                        )
+                    },
+                )
+            },
+            content = { paddingValues ->
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp)
+                        .padding(paddingValues)
+                        .verticalScroll(rememberScrollState()),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Top
+                ) {
+                    Text(
+                        text = it.name,
+                        style = MaterialTheme.typography.headlineLarge,
+                        color = Color(0xFF795548)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedTextField(
-                value = it.name,
-                onValueChange = {},
-                label = { Text("Barbershop Name", color = Color(0xFF795548)) },
-                readOnly = true,
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(8.dp))
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .border(1.dp, Color.White, RoundedCornerShape(8.dp)),
+                        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
 
-            OutlinedTextField(
-                value = it.description,
-                onValueChange = {},
-                label = { Text("Description", color = Color(0xFF795548)) },
-                readOnly = true,
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(8.dp))
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(text = "Endereço", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF795548))
+                                    Text(text = it.address, color = Color.Black)
+                                }
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(text = "Telefone", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF795548))
+                                    Text(text = it.phone, color = Color.Black)
+                                }
+                            }
+                            Text(text = "Descrição", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF795548))
+                            Text(text = it.description, color = Color.Black)
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
 
-            OutlinedTextField(
-                value = it.address,
-                onValueChange = {},
-                label = { Text("Address", color = Color(0xFF795548)) },
-                readOnly = true,
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(8.dp))
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
 
-            OutlinedTextField(
-                value = it.phone,
-                onValueChange = {},
-                label = { Text("Phone", color = Color(0xFF795548)) },
-                readOnly = true,
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(8.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(
+                            value = it.startShift,
+                            onValueChange = {},
+                            label = { Text("Abertura", color = Color(0xFF795548)) },
+                            readOnly = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                        OutlinedTextField(
+                            value = it.endShift,
+                            onValueChange = {},
+                            label = { Text("Fechamento", color = Color(0xFF795548)) },
+                            readOnly = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedTextField(
-                value = it.startShift,
-                onValueChange = {},
-                label = { Text("Start Shift", color = Color(0xFF795548)) },
-                readOnly = true,
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Cortes Disponíveis",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = Color(0xFF795548)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
 
-            OutlinedTextField(
-                value = it.endShift,
-                onValueChange = {},
-                label = { Text("End Shift", color = Color(0xFF795548)) },
-                readOnly = true,
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(16.dp))
+                    it.tags.forEach { cut ->
+                        Text(text = "- $cut", color = Color.Black)
+                        Spacer(modifier = Modifier.height(4.dp))
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
 
-            Text(
-                text = "Available Cuts",
-                style = MaterialTheme.typography.bodyLarge,
-                color = Color(0xFF795548)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-
-            it.tags.forEach { cut ->
-                Text(text = "- $cut", color = Color.Black)
-                Spacer(modifier = Modifier.height(4.dp))
+                    Button(
+                        onClick = onNavigateToEditProfile,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF795548)),
+                        modifier = Modifier.fillMaxWidth(0.75F).padding(top = 16.dp),
+                        shape = MaterialTheme.shapes.medium
+                    ) {
+                        Text(text = "Edit Profile", color = Color.White)
+                    }
+                }
             }
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Button(
-                onClick = onNavigateToEditProfile,
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF795548)),
-                modifier = Modifier.fillMaxWidth(0.80F).padding(top = 16.dp),
-                shape = MaterialTheme.shapes.medium
-            ) {
-                Text(text = "Edit Profile", color = Color.White)
-            }
-        }
+        )
     }
 }
 
