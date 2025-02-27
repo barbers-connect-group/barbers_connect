@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "90575588526",
+    "project_id": "banco-pdm",
+    "storage_bucket": "banco-pdm.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:90575588526:android:46712b5734cb93b9c9713f",
+        "android_client_info": {
+          "package_name": "com.example.barbers_connect"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCUe1zGZ6MafYstLyoK7jGj3p9OzLCztVs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:90575588526:android:b7bf07172b452f19c9713f",
+        "android_client_info": {
+          "package_name": "com.example.navegacao1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCUe1zGZ6MafYstLyoK7jGj3p9OzLCztVs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -4,6 +4,7 @@ import UserService
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,6 +17,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.ContactMail
+import androidx.compose.material.icons.filled.ContentCut
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material3.Button
@@ -24,6 +27,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -32,6 +36,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,71 +44,46 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.NavHost
+import com.example.barbers_connect.formatIsoDate
+import com.example.barbers_connect.getColorScheme
 import com.example.barbers_connect.model.BarberShop
 import com.example.barbers_connect.model.User
 import com.example.barbers_connect.service.BarberShopService
+import com.example.barbers_connect.service.WelcomeMesageService
+
+var userLogged = false
+
 
 @Composable
 fun UserScreen(navController: NavHostController, onNavigateToLogin: () -> Unit,
                onNavigateToRegister: () -> Unit, onNavigateToProfile: () -> Unit,
                onNavigateToBarbershops: () -> Unit, onNavigateToUserProfile: () -> Unit) {
+    val context = LocalContext.current
+    val startDestination = if (!userLogged) "login" else "perfil"
+
     MaterialTheme(
-        colorScheme = ColorScheme(
-            primary = Color(0xFF795548),
-            onPrimary = Color.White,
-            primaryContainer = Color.White,
-            onPrimaryContainer = Color.White,
-            inversePrimary = Color.White,
-            secondary = Color(0xFF5D4037),
-            onSecondary = Color.White,
-            secondaryContainer = Color.White,
-            onSecondaryContainer = Color.White,
-            tertiary = Color(0xFF4E342E),
-            onTertiary = Color.White,
-            tertiaryContainer = Color.White,
-            onTertiaryContainer = Color.White,
-            background = Color(0xFFF5F5DC),
-            onBackground = Color.Black,
-            surface = Color(0xFFF5F5DC),
-            onSurface = Color.Black,
-            surfaceVariant = Color.White,
-            onSurfaceVariant = Color.White,
-            surfaceTint = Color.White,
-            inverseSurface = Color.White,
-            inverseOnSurface = Color.White,
-            error = Color.Red,
-            onError = Color.White,
-            errorContainer = Color.White,
-            onErrorContainer = Color.White,
-            outline = Color.White,
-            outlineVariant = Color.White,
-            scrim = Color.White,
-            surfaceBright = Color.White,
-            surfaceDim = Color.White,
-            surfaceContainer = Color.White,
-            surfaceContainerHigh = Color.White,
-            surfaceContainerHighest = Color.White,
-            surfaceContainerLow = Color.White,
-            surfaceContainerLowest = Color.White,
-        )
+        colorScheme = getColorScheme()
     ) {
         Scaffold(
             bottomBar = {
-                BottomNavigationBar(
-                    onNavigateToLogin, onNavigateToRegister, onNavigateToProfile,
-                    onNavigateToBarbershops, onNavigateToUserProfile
-                )
+                if (!userLogged) {
+                    AuthBottomNavigationBar(onNavigateToLogin, onNavigateToRegister, onNavigateToProfile,
+                        onNavigateToBarbershops, onNavigateToUserProfile)
+                } else {
+                    MainBottomNavigationBar(onNavigateToBarbershops, onNavigateToUserProfile)
+                }
             }
         ) { paddingValues ->
             NavHost(
                 navController = navController,
-                startDestination = "login",
+                startDestination = startDestination,
                 modifier = Modifier.padding(paddingValues)
             ) {
                 composable("login") { LoginScreen(onNavigateToRegister, onNavigateToBarbershops, onNavigateToUserProfile) }
@@ -117,9 +97,9 @@ fun UserScreen(navController: NavHostController, onNavigateToLogin: () -> Unit,
 }
 
 @Composable
-fun BottomNavigationBar(onNavigateToLogin: () -> Unit, onNavigateToRegister: () -> Unit,
-                        onNavigateToProfile: () -> Unit, onNavigateToBarbershops: () -> Unit,
-                        onNavigateToUserProfile: () -> Unit) {
+fun AuthBottomNavigationBar(onNavigateToLogin: () -> Unit, onNavigateToRegister: () -> Unit,
+                            onNavigateToProfile: () -> Unit, onNavigateToBarbershops: () -> Unit,
+                            onNavigateToUserProfile: () -> Unit) {
     val selectedColor = Color(0xFF4CAF50)
     val defaultColor = Color.White
     val backgroundColor = Color(0xFF795548)
@@ -155,12 +135,62 @@ fun BottomNavigationBar(onNavigateToLogin: () -> Unit, onNavigateToRegister: () 
 }
 
 @Composable
+fun MainBottomNavigationBar(onNavigateToBarbershops: () -> Unit, onNavigateToUserProfile: () -> Unit) {
+    val selectedColor = Color(0xFF4CAF50)
+    val defaultColor = Color.White
+    val backgroundColor = Color(0xFF795548)
+
+    NavigationBar(containerColor = backgroundColor, tonalElevation = 8.dp) {
+        val items = listOf("Barbearias" to Icons.Default.ContentCut, "Perfil" to Icons.Default.ContactMail)
+        val actions = listOf(onNavigateToBarbershops, onNavigateToUserProfile)
+        var selectedItem by remember { mutableStateOf(0) }
+
+        items.forEachIndexed { index, (label, icon) ->
+            NavigationBarItem(
+                label = {
+                    Text(
+                        label,
+                        color = if (selectedItem == index) selectedColor else defaultColor
+                    )
+                },
+                selected = selectedItem == index,
+                onClick = {
+                    selectedItem = index
+                    actions[index]()
+                },
+                icon = {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = label,
+                        tint = if (selectedItem == index) selectedColor else defaultColor
+                    )
+                }
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
 fun LoginScreen(onNavigateToRegister: () -> Unit, onNavigateToBarbershops: () -> Unit,
                 onNavigateToUserProfile: () -> Unit) {
+    val textFieldColors = TextFieldDefaults.outlinedTextFieldColors(
+        containerColor = Color(0xFFF5F5DC),
+        focusedBorderColor = Color(0xFF795548),
+        unfocusedBorderColor = Color(0xFFBCAAA4)
+    )
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var message by remember { mutableStateOf<String?>(null)  }
     val context = LocalContext.current
+    var welcomeMessage by remember { mutableStateOf<String?>(null) }
+    val welcomeMesageService = WelcomeMesageService()
+
+    LaunchedEffect(Unit) {
+        welcomeMesageService.search { result ->
+            welcomeMessage = result?.message
+        }
+    }
 
     fun login() {
         val user = User(username = username, password = password)
@@ -170,6 +200,7 @@ fun LoginScreen(onNavigateToRegister: () -> Unit, onNavigateToBarbershops: () ->
             message = result["message"].toString()
 
             if (status == "success") {
+                userLogged = true
                 onNavigateToUserProfile()
             //onNavigateToBarbershops()
             }
@@ -179,54 +210,92 @@ fun LoginScreen(onNavigateToRegister: () -> Unit, onNavigateToBarbershops: () ->
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Top
     ) {
-        Text(
-            text = "Login",
-            style = MaterialTheme.typography.headlineLarge,
-            color = Color(0xFF795548) // Marrom
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        OutlinedTextField(
-            label = { Text("Username", color = Color(0xFF795548)) },
-            value = username,
-            onValueChange = { username = it }
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        OutlinedTextField(
-            label = { Text("Senha", color = Color(0xFF795548)) },
-            value = password,
-            onValueChange = { password = it },
-            visualTransformation = PasswordVisualTransformation()
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(
-            onClick = { login() },
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF795548)),
-            modifier = Modifier.fillMaxWidth(0.75F).padding(top = 16.dp),
-            shape = MaterialTheme.shapes.medium
-        ) {
-            Text(
-                text = "Entrar",
-                color = Color.White
-            )
+        Spacer(modifier = Modifier.height(56.dp))
+        welcomeMessage?.let {
+            Card(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                shape = MaterialTheme.shapes.medium,
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            ) {
+                Box(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                        color = Color(0xFF795548),
+                        textAlign = TextAlign.Start,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
         }
-        Spacer(modifier = Modifier.height(8.dp))
 
-        TextButton (onClick = onNavigateToRegister) {
-            Text(
-                text = "Esqueci minha senha",
-                color = Color(0xFF795548),
-                textDecoration = TextDecoration.Underline
-            )
-        }
-        LaunchedEffect(message) {
-            message?.let {
-                Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-                message = null
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            shape = MaterialTheme.shapes.medium,
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = "Login",
+                    style = MaterialTheme.typography.headlineLarge,
+                    color = Color(0xFF795548) // Marrom
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                OutlinedTextField(
+                    label = { Text("Username", color = Color(0xFF795548)) },
+                    value = username,
+                    onValueChange = { username = it },
+                    colors = textFieldColors
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    label = { Text("Senha", color = Color(0xFF795548)) },
+                    value = password,
+                    onValueChange = { password = it },
+                    visualTransformation = PasswordVisualTransformation(),
+                    colors = textFieldColors
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = { login() },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF795548)),
+                    modifier = Modifier.fillMaxWidth(0.80F).padding(top = 16.dp),
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Text(
+                        text = "Entrar",
+                        color = Color.White
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+
+                TextButton (onClick = onNavigateToRegister) {
+                    Text(
+                        text = "Esqueci minha senha",
+                        color = Color(0xFF795548),
+                        textDecoration = TextDecoration.Underline
+                    )
+                }
+                LaunchedEffect(message) {
+                    message?.let {
+                        Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                        message = null
+                    }
+                }
             }
         }
     }
+
 }
 
 @Composable
@@ -285,7 +354,7 @@ fun UserProfileScreen() {
                 user?.let {
                     UserProfileItem(label = "Nome de usuário", value = it.username)
                     UserProfileItem(label = "Email", value = it.email.toString())
-                    UserProfileItem(label = "Conta criada em", value = it.createdAt.toString())
+                    UserProfileItem(label = "Conta criada em", value = formatIsoDate(it.createdAt.toString()))
                 } ?: CircularProgressIndicator(color = Color(0xFF795548))
             }
         }
@@ -446,7 +515,7 @@ fun ProfileScreen(onNavigateToEditProfile: () -> Unit) {
             Button(
                 onClick = onNavigateToEditProfile,
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF795548)),
-                modifier = Modifier.fillMaxWidth(0.75F).padding(top = 16.dp),
+                modifier = Modifier.fillMaxWidth(0.80F).padding(top = 16.dp),
                 shape = MaterialTheme.shapes.medium
             ) {
                 Text(text = "Edit Profile", color = Color.White)
@@ -455,13 +524,20 @@ fun ProfileScreen(onNavigateToEditProfile: () -> Unit) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(onNavigateToLogin: () -> Unit) {
+    val textFieldColors = TextFieldDefaults.outlinedTextFieldColors(
+        containerColor = Color(0xFFF5F5DC),
+        focusedBorderColor = Color(0xFF795548),
+        unfocusedBorderColor = Color(0xFFBCAAA4)
+    )
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var message by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
+
 
     fun register() {
         val user = User(username = username, email = email, password = password)
@@ -475,55 +551,79 @@ fun RegisterScreen(onNavigateToLogin: () -> Unit) {
             }
         }
     }
+
     Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(
-            text = "Cadastro",
-            style = MaterialTheme.typography.headlineLarge,
-            color = Color(0xFF795548) // Marrom
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        OutlinedTextField(
-            label = { Text("Username", color = Color(0xFF795548)) },
-            value = username,
-            onValueChange = { username = it }
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        OutlinedTextField(
-            label = { Text("E-mail", color = Color(0xFF795548)) },
-            value = email,
-            onValueChange = { email = it }
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        OutlinedTextField(
-            label = { Text("Senha", color = Color(0xFF795548)) },
-            value = password,
-            onValueChange = { password = it },
-            visualTransformation = PasswordVisualTransformation()
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(
-            onClick = { register() },
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF795548)),
-            modifier = Modifier.fillMaxWidth(0.75F).padding(top = 16.dp),
-            shape = MaterialTheme.shapes.medium
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            shape = MaterialTheme.shapes.medium,
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
-            Text(
-                text = "Cadastrar",
-                color = Color.White
-            )
-        }
-        Spacer(modifier = Modifier.height(8.dp))
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = "Cadastro",
+                    style = MaterialTheme.typography.headlineLarge,
+                    color = Color(0xFF795548) // Marrom
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                OutlinedTextField(
+                    label = { Text("Username", color = Color(0xFF795548)) },
+                    value = username,
+                    onValueChange = { username = it },
+                    colors = textFieldColors
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    label = { Text("E-mail", color = Color(0xFF795548)) },
+                    value = email,
+                    onValueChange = { email = it },
+                    colors = textFieldColors
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    label = { Text("Senha", color = Color(0xFF795548)) },
+                    value = password,
+                    onValueChange = { password = it },
+                    visualTransformation = PasswordVisualTransformation(),
+                    colors = textFieldColors
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = { register() },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF795548)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp),
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Text(
+                        text = "Cadastrar",
+                        color = Color.White
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
 
-        TextButton(onClick = onNavigateToLogin) {
-            Text(
-                text = "Já tem uma conta? Faça login",
-                color = Color(0xFF795548),
-                textDecoration = TextDecoration.Underline
-            )
+                TextButton(onClick = onNavigateToLogin) {
+                    Text(
+                        text = "Já tem uma conta? Faça login",
+                        color = Color(0xFF795548),
+                        textDecoration = TextDecoration.Underline
+                    )
+                }
+            }
         }
 
         LaunchedEffect(message) {
@@ -534,4 +634,3 @@ fun RegisterScreen(onNavigateToLogin: () -> Unit) {
         }
     }
 }
-

@@ -42,8 +42,8 @@ object BarberShopService {
                                 description = json.getString("description"),
                                 address = json.getString("address"),
                                 phone = json.getString("phone"),
-                                startShift = json.optString("startShift", "00:00:00"), // Usa um valor padrão se não existir
-                                endShift = json.optString("endShift", "00:00:00"),
+                                startShift = json.optString("start_shift", "00:00:00"), // Usa um valor padrão se não existir
+                                endShift = json.optString("end_shift", "00:00:00"),
                                 tags = json.getJSONArray("tags").let { array ->
                                     mutableListOf<String>().apply {
                                         for (i in 0 until array.length()) {
