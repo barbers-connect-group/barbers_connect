@@ -19,7 +19,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.ContactMail
 import androidx.compose.material.icons.filled.ContentCut
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PersonAdd
@@ -28,7 +27,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -44,6 +42,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -60,8 +59,9 @@ import com.example.barbers_connect.model.BarberShop
 import com.example.barbers_connect.model.User
 import com.example.barbers_connect.service.BarberShopService
 import com.example.barbers_connect.service.WelcomeMesageService
+import com.example.barbers_connect.ui.barbershop.BarberShopsScreen
 
-var userLogged = false
+//var userLogged = false
 
 
 @Composable
@@ -69,19 +69,61 @@ fun UserScreen(navController: NavHostController, onNavigateToLogin: () -> Unit,
                onNavigateToRegister: () -> Unit, onNavigateToProfile: () -> Unit,
                onNavigateToBarbershops: () -> Unit, onNavigateToUserProfile: () -> Unit) {
     val context = LocalContext.current
-    val startDestination = if (!userLogged) "login" else "perfil"
+//    val startDestination = if (!userLogged) "login" else "perfil"
+    val startDestination = "login"
 
     MaterialTheme(
         colorScheme = getColorScheme()
     ) {
+        var isLoggedIn by remember { mutableStateOf(false) }
+        var barbershopId by remember { mutableIntStateOf(101) }
+
+        fun onLoginSuccess() {
+            isLoggedIn = true
+        }
+        fun onLogOut() {
+            isLoggedIn = false
+        }
+
+        val bottomBarItems = remember(isLoggedIn) {
+            if (isLoggedIn) {
+                listOf(
+                    "Barbershops" to Icons.Default.ContentCut,
+                    "Perfil" to Icons.Default.Person,
+//                    "Barbearia" to Icons.Default.ContentCut,
+                )
+            } else {
+                listOf(
+                    "Login" to Icons.Default.Person,
+                    "Cadastro" to Icons.Default.PersonAdd,
+//                    "Barbearia" to Icons.Default.ContentCut,
+//                    "Barbershops" to Icons.Default.ContentCut
+                )
+            }
+        }
+
+        val bottomBarItemsNav = remember(isLoggedIn) {
+            if (isLoggedIn) {
+                listOf(onNavigateToBarbershops,onNavigateToUserProfile)
+//                listOf(onNavigateToBarbershops,onNavigateToUserProfile, onNavigateToProfile)
+            } else {
+                listOf(onNavigateToLogin, onNavigateToRegister)
+//                listOf(onNavigateToLogin, onNavigateToRegister, onNavigateToProfile, onNavigateToBarbershops)
+            }
+        }
+
+
         Scaffold(
+//            bottomBar = {
+//                if (!userLogged) {
+//                    AuthBottomNavigationBar(onNavigateToLogin, onNavigateToRegister, onNavigateToProfile,
+//                        onNavigateToBarbershops, onNavigateToUserProfile)
+//                } else {
+//                    MainBottomNavigationBar(onNavigateToBarbershops, onNavigateToUserProfile)
+//                }
+//            }
             bottomBar = {
-                if (!userLogged) {
-                    AuthBottomNavigationBar(onNavigateToLogin, onNavigateToRegister, onNavigateToProfile,
-                        onNavigateToBarbershops, onNavigateToUserProfile)
-                } else {
-                    MainBottomNavigationBar(onNavigateToBarbershops, onNavigateToUserProfile)
-                }
+                BottomNavigationBar(bottomBarItems = bottomBarItems, bottomBarItemsNav = bottomBarItemsNav)
             }
         ) { paddingValues ->
             NavHost(
@@ -89,30 +131,103 @@ fun UserScreen(navController: NavHostController, onNavigateToLogin: () -> Unit,
                 startDestination = startDestination,
                 modifier = Modifier.padding(paddingValues)
             ) {
-                composable("login") { LoginScreen(onNavigateToRegister, onNavigateToBarbershops, onNavigateToUserProfile) }
+                composable("login") { LoginScreen({ onLoginSuccess()  }, onNavigateToRegister, onNavigateToBarbershops, onNavigateToUserProfile) }
                 composable("register") { RegisterScreen(onNavigateToLogin) }
-                composable("profile") {ProfileScreen(onNavigateToProfile)}
-                //composable("barbershops") {BarbershopsScreen()}
-                composable("userprofile") {UserProfileScreen()}
+                composable("profile") {ProfileScreen(barbershopId = barbershopId, onNavigateToBarbershops = onNavigateToBarbershops)}
+                composable("barbershops") { BarberShopsScreen(barbershopId = barbershopId, onChangeBarbershopId = { barbershopId = it},onNavigateToProfile = onNavigateToProfile, onNavigateToLogin = onNavigateToLogin) { onLogOut() }
+                }
+                composable("userprofile") {UserProfileScreen(onNavigateToLogin = onNavigateToLogin) {onLogOut()} }
             }
         }
     }
 }
 
+//@Composable
+//fun AuthBottomNavigationBar(onNavigateToLogin: () -> Unit, onNavigateToRegister: () -> Unit,
+//                            onNavigateToProfile: () -> Unit, onNavigateToBarbershops: () -> Unit,
+//                            onNavigateToUserProfile: () -> Unit) {
+//    val selectedColor = Color(0xFF4CAF50)
+//    val defaultColor = Color.White
+//    val backgroundColor = Color(0xFF795548)
+//
+//    NavigationBar(containerColor = backgroundColor, tonalElevation = 8.dp) {
+//        val items = listOf("Login" to Icons.Default.Person, "Cadastro" to Icons.Default.PersonAdd,"Perfil" to Icons.Default.Person)
+//        val actions = listOf(onNavigateToLogin, onNavigateToRegister, onNavigateToProfile)
+//        var selectedItem by remember { mutableStateOf(0) }
+//
+//        items.forEachIndexed { index, (label, icon) ->
+//            NavigationBarItem(
+//                label = {
+//                    Text(
+//                        label,
+//                        color = if (selectedItem == index) selectedColor else defaultColor
+//                    )
+//                },
+//                selected = selectedItem == index,
+//                onClick = {
+//                    selectedItem = index
+//                    actions[index]()
+//                },
+//                icon = {
+//                    Icon(
+//                        imageVector = icon,
+//                        contentDescription = label,
+//                        tint = if (selectedItem == index) selectedColor else defaultColor
+//                    )
+//                }
+//            )
+//        }
+//    }
+//}
+//
+//@Composable
+//fun MainBottomNavigationBar(onNavigateToBarbershops: () -> Unit, onNavigateToUserProfile: () -> Unit) {
+//    val selectedColor = Color(0xFF4CAF50)
+//    val defaultColor = Color.White
+//    val backgroundColor = Color(0xFF795548)
+//
+//    NavigationBar(containerColor = backgroundColor, tonalElevation = 8.dp) {
+//        val items = listOf("Barbearias" to Icons.Default.ContentCut, "Perfil" to Icons.Default.ContactMail)
+//        val actions = listOf(onNavigateToBarbershops, onNavigateToUserProfile)
+//        var selectedItem by remember { mutableStateOf(0) }
+//
+//        items.forEachIndexed { index, (label, icon) ->
+//            NavigationBarItem(
+//                label = {
+//                    Text(
+//                        label,
+//                        color = if (selectedItem == index) selectedColor else defaultColor
+//                    )
+//                },
+//                selected = selectedItem == index,
+//                onClick = {
+//                    selectedItem = index
+//                    actions[index]()
+//                },
+//                icon = {
+//                    Icon(
+//                        imageVector = icon,
+//                        contentDescription = label,
+//                        tint = if (selectedItem == index) selectedColor else defaultColor
+//                    )
+//                }
+//            )
+//        }
+//    }
+//}
+
+
 @Composable
-fun AuthBottomNavigationBar(onNavigateToLogin: () -> Unit, onNavigateToRegister: () -> Unit,
-                            onNavigateToProfile: () -> Unit, onNavigateToBarbershops: () -> Unit,
-                            onNavigateToUserProfile: () -> Unit) {
+fun BottomNavigationBar(bottomBarItems: List<Pair<String, ImageVector>>,
+                        bottomBarItemsNav: List<() -> Unit>) {
     val selectedColor = Color(0xFF4CAF50)
     val defaultColor = Color.White
     val backgroundColor = Color(0xFF795548)
 
     NavigationBar(containerColor = backgroundColor, tonalElevation = 8.dp) {
-        val items = listOf("Login" to Icons.Default.Person, "Cadastro" to Icons.Default.PersonAdd,"Perfil" to Icons.Default.Person)
-        val actions = listOf(onNavigateToLogin, onNavigateToRegister, onNavigateToProfile)
         var selectedItem by remember { mutableStateOf(0) }
 
-        items.forEachIndexed { index, (label, icon) ->
+        bottomBarItems.forEachIndexed { index, (label, icon) ->
             NavigationBarItem(
                 label = {
                     Text(
@@ -123,7 +238,7 @@ fun AuthBottomNavigationBar(onNavigateToLogin: () -> Unit, onNavigateToRegister:
                 selected = selectedItem == index,
                 onClick = {
                     selectedItem = index
-                    actions[index]()
+                    bottomBarItemsNav[index]()
                 },
                 icon = {
                     Icon(
@@ -137,45 +252,10 @@ fun AuthBottomNavigationBar(onNavigateToLogin: () -> Unit, onNavigateToRegister:
     }
 }
 
-@Composable
-fun MainBottomNavigationBar(onNavigateToBarbershops: () -> Unit, onNavigateToUserProfile: () -> Unit) {
-    val selectedColor = Color(0xFF4CAF50)
-    val defaultColor = Color.White
-    val backgroundColor = Color(0xFF795548)
-
-    NavigationBar(containerColor = backgroundColor, tonalElevation = 8.dp) {
-        val items = listOf("Barbearias" to Icons.Default.ContentCut, "Perfil" to Icons.Default.ContactMail)
-        val actions = listOf(onNavigateToBarbershops, onNavigateToUserProfile)
-        var selectedItem by remember { mutableStateOf(0) }
-
-        items.forEachIndexed { index, (label, icon) ->
-            NavigationBarItem(
-                label = {
-                    Text(
-                        label,
-                        color = if (selectedItem == index) selectedColor else defaultColor
-                    )
-                },
-                selected = selectedItem == index,
-                onClick = {
-                    selectedItem = index
-                    actions[index]()
-                },
-                icon = {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = label,
-                        tint = if (selectedItem == index) selectedColor else defaultColor
-                    )
-                }
-            )
-        }
-    }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginScreen(onNavigateToRegister: () -> Unit, onNavigateToBarbershops: () -> Unit,
+fun LoginScreen(onLoginSuccess: () -> Unit, onNavigateToRegister: () -> Unit, onNavigateToBarbershops: () -> Unit,
                 onNavigateToUserProfile: () -> Unit) {
     val textFieldColors = TextFieldDefaults.outlinedTextFieldColors(
         containerColor = Color(0xFFF5F5DC),
@@ -203,22 +283,26 @@ fun LoginScreen(onNavigateToRegister: () -> Unit, onNavigateToBarbershops: () ->
             message = result["message"].toString()
 
             if (status == "success") {
-                userLogged = true
-                onNavigateToUserProfile()
-            //onNavigateToBarbershops()
+//                onNavigateToUserProfile()
+                onLoginSuccess()
+                onNavigateToBarbershops()
             }
         }
     }
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
         Spacer(modifier = Modifier.height(56.dp))
         welcomeMessage?.let {
             Card(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
                 shape = MaterialTheme.shapes.medium,
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
             ) {
@@ -272,7 +356,9 @@ fun LoginScreen(onNavigateToRegister: () -> Unit, onNavigateToBarbershops: () ->
                 Button(
                     onClick = { login() },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF795548)),
-                    modifier = Modifier.fillMaxWidth(0.80F).padding(top = 16.dp),
+                    modifier = Modifier
+                        .fillMaxWidth(0.80F)
+                        .padding(top = 16.dp),
                     shape = MaterialTheme.shapes.medium
                 ) {
                     Text(
@@ -282,12 +368,20 @@ fun LoginScreen(onNavigateToRegister: () -> Unit, onNavigateToBarbershops: () ->
                 }
                 Spacer(modifier = Modifier.height(8.dp))
 
-                TextButton (onClick = onNavigateToRegister) {
+                Row (
+                    verticalAlignment = Alignment.CenterVertically
+                ){
                     Text(
-                        text = "Esqueci minha senha",
-                        color = Color(0xFF795548),
-                        textDecoration = TextDecoration.Underline
+                        text = "Não possui conta?",
+                        color = Color(0xFF795548)
                     )
+                    TextButton (onClick = onNavigateToRegister) {
+                        Text(
+                            text = "Cadastre-se",
+                            color = Color(0xFF795548),
+                            textDecoration = TextDecoration.Underline
+                        )
+                    }
                 }
                 LaunchedEffect(message) {
                     message?.let {
@@ -302,10 +396,16 @@ fun LoginScreen(onNavigateToRegister: () -> Unit, onNavigateToBarbershops: () ->
 }
 
 @Composable
-fun UserProfileScreen() {
+fun UserProfileScreen(onNavigateToLogin: () -> Unit,
+                      onLogout: () -> Unit) {
     var user by remember { mutableStateOf<User?>(null) }
     var message by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
+
+    fun logout() {
+        onLogout()
+        onNavigateToLogin()
+    }
 
     LaunchedEffect(Unit) {
         UserService.current_user(context) { result ->
@@ -365,7 +465,7 @@ fun UserProfileScreen() {
         Spacer(modifier = Modifier.height(24.dp))
 
         Button(
-            onClick = { },
+            onClick = { logout() },
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF795548)),
             modifier = Modifier
                 .fillMaxWidth(0.75F)
@@ -413,12 +513,12 @@ fun UserProfileItem(label: String, value: String) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileScreen(onNavigateToEditProfile: () -> Unit) {
+fun ProfileScreen(barbershopId: Int, onNavigateToBarbershops: () -> Unit) {
     var barbershop by remember { mutableStateOf<BarberShop?>(null) }
     var errorMessage by remember { mutableStateOf("") }
     val context = LocalContext.current
 
-    BarberShopService.getBarberShopProfile(context = context, barberShopId = 150) { profile, error ->
+    BarberShopService.getBarberShopProfile(context = context, barberShopId = barbershopId) { profile, error ->
         if (profile != null) {
             barbershop = profile
         } else {
@@ -511,19 +611,21 @@ fun ProfileScreen(onNavigateToEditProfile: () -> Unit) {
                     )
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    it.tags.forEach { cut ->
-                        Text(text = "- $cut", color = Color.Black)
+                    it.tags.forEach { tag ->
+                        Text(text = "- ${tag.name}", color = Color.Black)
                         Spacer(modifier = Modifier.height(4.dp))
                     }
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Button(
-                        onClick = onNavigateToEditProfile,
+                        onClick = onNavigateToBarbershops,
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF795548)),
-                        modifier = Modifier.fillMaxWidth(0.75F).padding(top = 16.dp),
+                        modifier = Modifier
+                            .fillMaxWidth(0.75F)
+                            .padding(top = 16.dp),
                         shape = MaterialTheme.shapes.medium
                     ) {
-                        Text(text = "Edit Profile", color = Color.White)
+                        Text(text = "Voltar", color = Color.White)
                     }
                 }
             }
