@@ -60,6 +60,7 @@ import com.example.barbers_connect.model.User
 import com.example.barbers_connect.service.BarberShopService
 import com.example.barbers_connect.service.WelcomeMesageService
 import com.example.barbers_connect.ui.barbershop.BarberShopsScreen
+import com.example.barbers_connect.ui.barbershop.ReviewsScreen
 
 //var userLogged = false
 
@@ -67,7 +68,8 @@ import com.example.barbers_connect.ui.barbershop.BarberShopsScreen
 @Composable
 fun UserScreen(navController: NavHostController, onNavigateToLogin: () -> Unit,
                onNavigateToRegister: () -> Unit, onNavigateToProfile: () -> Unit,
-               onNavigateToBarbershops: () -> Unit, onNavigateToUserProfile: () -> Unit) {
+               onNavigateToBarbershops: () -> Unit, onNavigateToReviews: () -> Unit,
+               onNavigateToUserProfile: () -> Unit) {
     val context = LocalContext.current
 //    val startDestination = if (!userLogged) "login" else "perfil"
     val startDestination = "login"
@@ -133,9 +135,9 @@ fun UserScreen(navController: NavHostController, onNavigateToLogin: () -> Unit,
             ) {
                 composable("login") { LoginScreen({ onLoginSuccess()  }, onNavigateToRegister, onNavigateToBarbershops, onNavigateToUserProfile) }
                 composable("register") { RegisterScreen(onNavigateToLogin) }
-                composable("profile") {ProfileScreen(barbershopId = barbershopId, onNavigateToBarbershops = onNavigateToBarbershops)}
-                composable("barbershops") { BarberShopsScreen(barbershopId = barbershopId, onChangeBarbershopId = { barbershopId = it},onNavigateToProfile = onNavigateToProfile, onNavigateToLogin = onNavigateToLogin) { onLogOut() }
-                }
+                composable("profile") {ProfileScreen(barbershopId = barbershopId, onChangeBarbershopId = { barbershopId = it}, onNavigateToBarbershops = onNavigateToBarbershops, onNavigateToReviews = onNavigateToReviews) }
+                composable("barbershops") { BarberShopsScreen(barbershopId = barbershopId, onChangeBarbershopId = { barbershopId = it}, onNavigateToProfile = onNavigateToProfile, onNavigateToLogin = onNavigateToLogin) { onLogOut() } }
+                composable("reviews") { ReviewsScreen(barbershopId = barbershopId, onChangeBarbershopId = { barbershopId = it}, onNavigateToProfile = onNavigateToProfile) }
                 composable("userprofile") {UserProfileScreen(onNavigateToLogin = onNavigateToLogin) {onLogOut()} }
             }
         }
@@ -513,7 +515,7 @@ fun UserProfileItem(label: String, value: String) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileScreen(barbershopId: Int, onNavigateToBarbershops: () -> Unit) {
+fun ProfileScreen(barbershopId: Int, onChangeBarbershopId: (Int) -> Unit, onNavigateToBarbershops: () -> Unit, onNavigateToReviews: () -> Unit) {
     var barbershop by remember { mutableStateOf<BarberShop?>(null) }
     var errorMessage by remember { mutableStateOf("") }
     val context = LocalContext.current
@@ -535,11 +537,6 @@ fun ProfileScreen(barbershopId: Int, onNavigateToBarbershops: () -> Unit) {
             topBar = {
                 TopAppBar(
                     title = {
-                        Text(
-                            text = it.name,
-                            style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
-                            color = Color.White
-                        )
                     },
                 )
             },
@@ -616,10 +613,25 @@ fun ProfileScreen(barbershopId: Int, onNavigateToBarbershops: () -> Unit) {
                         Spacer(modifier = Modifier.height(4.dp))
                     }
                     Spacer(modifier = Modifier.height(16.dp))
+                    Button(
 
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF795548)),
+                        modifier = Modifier
+                            .fillMaxWidth(0.75F)
+                            .padding(top = 16.dp),
+                        shape = MaterialTheme.shapes.medium,
+                        onClick = {
+                            barbershop?.id?.let { id ->
+                                onChangeBarbershopId(id)
+                                onNavigateToReviews()
+                            }
+                        } ,
+                    ) {
+                        Text(text = "Reviews", color = Color.White)
+                    }
                     Button(
                         onClick = onNavigateToBarbershops,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF795548)),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
                         modifier = Modifier
                             .fillMaxWidth(0.75F)
                             .padding(top = 16.dp),

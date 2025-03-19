@@ -2,14 +2,22 @@ package com.example.barbers_connect.service
 
 import UserService
 import android.content.Context
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import com.example.barbers_connect.model.BarberShop
+import com.example.barbers_connect.model.Review
 import com.example.barbers_connect.model.Tag
 import okhttp3.Call
+import okhttp3.Callback
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
 import org.json.JSONObject
+import java.io.IOException
+import java.time.LocalDateTime
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 
 object BarberShopService {
     private val client = OkHttpClient()
@@ -141,6 +149,67 @@ object BarberShopService {
                 } else {
                     // If the response is not successful
                     callback(null, "Erro ao buscar o perfil")
+                }
+            }
+        })
+    }
+
+    fun getBarberShopReviews(context: Context, barberShopId: Int, callback: (Map<String, Any>) -> Unit) {
+        val token = UserService.getToken(context)
+        val request = Request.Builder()
+            .url("https://barbersconnectapi.vercel.app/api/reviews/?barbershop_id=$barberShopId")
+            .get()
+            .header("Authorization", "Token $token")
+            .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                callback(mapOf("message" to "Erro: ${e.message}"))
+            }
+
+            @RequiresApi(Build.VERSION_CODES.O)
+            override fun onResponse(call: Call, response: Response) {
+                if (response.isSuccessful) {
+                    val responseBody = response.body?.string()
+                    if (responseBody != null) {
+                        try {
+                            val json = JSONObject(responseBody)
+                            val reviewsList = mutableListOf<Review>()
+                            val results = json.getJSONArray("results")
+                            Log.e("results:", results.toString())
+                            for (i in 0 until results.length()) {
+                                val reviewJson = results.getJSONObject(i)
+                                val review = Review(
+                                    id = reviewJson.getString("id").toInt(),
+                                    description = reviewJson.getString("description"),
+                                    rating = reviewJson.getString("rating").toInt(),
+                                    imagePath = reviewJson.getString("image_path"),
+                                    createdAt = reviewJson.optString("created_at", "")
+                                        .takeIf { it.isNotEmpty() }?.let {
+                                            val formatter = DateTimeFormatter.ISO_DATE_TIME
+                                            val localDateTime = LocalDateTime.parse(it, formatter)
+                                            localDateTime.toInstant(ZoneOffset.UTC).toEpochMilli()
+                                        } ?: System.currentTimeMillis(),
+                                    barbershopId = reviewJson.getString("barbershop").toInt(),
+                                )
+                                reviewsList.add(review)
+                            }
+                            callback(
+                                mapOf(
+                                    "message" to "Lista de reviews encontradas com sucesso",
+                                    "status" to "success",
+                                    "data" to reviewsList
+                                )
+                            )
+                        }
+                        catch (e: Exception) {
+                            callback(mapOf("message" to "Erro: ${e.message}"))
+                        }
+                    } else {
+                        callback(mapOf("message" to "Resposta vazia"))
+                    }
+                } else {
+                    callback(mapOf("message" to "Erro: ${response.code}: ${response.message}"))
                 }
             }
         })
