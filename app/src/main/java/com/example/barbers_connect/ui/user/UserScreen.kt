@@ -467,12 +467,12 @@ fun ProfileScreen(barbershopId: Int, onChangeBarbershopId: (Int) -> Unit, onNavi
             selectedDateTime = "$day/${month + 1}/$year $hour:$minute"
 
             barbershop?.id?.let { id ->
-                val appointment = Appointment(id, selectedDateTime)
-                BarberShopService.saveAppointment(context, appointment) { success, error ->
-                    if (!success) {
-                        errorMessage = error
-                    }
-                }
+//                val appointment = Appointment(id, selectedDateTime)
+//                BarberShopService.saveAppointment(context, appointment) { success, error ->
+//                    if (!success) {
+//                        errorMessage = error
+//                    }
+//                }
             }
         }, 12, 0, true)
         timePickerDialog.show()
