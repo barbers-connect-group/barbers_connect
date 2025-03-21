@@ -1,6 +1,8 @@
 package com.example.barbers_connect.ui.user
 
 import UserService
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -459,6 +461,23 @@ fun ProfileScreen(barbershopId: Int, onChangeBarbershopId: (Int) -> Unit, onNavi
     var errorMessage by remember { mutableStateOf("") }
     val context = LocalContext.current
 
+    var selectedDateTime by remember { mutableStateOf("") }
+    val datePickerDialog = remember { DatePickerDialog(context, { _, year, month, day ->
+        val timePickerDialog = TimePickerDialog(context, { _, hour, minute ->
+            selectedDateTime = "$day/${month + 1}/$year $hour:$minute"
+
+            barbershop?.id?.let { id ->
+                val appointment = Appointment(id, selectedDateTime)
+                BarberShopService.saveAppointment(context, appointment) { success, error ->
+                    if (!success) {
+                        errorMessage = error
+                    }
+                }
+            }
+        }, 12, 0, true)
+        timePickerDialog.show()
+    }, 2024, 0, 1) }
+
     BarberShopService.getBarberShopProfile(context = context, barberShopId = barbershopId) { profile, error ->
         if (profile != null) {
             barbershop = profile
@@ -552,6 +571,19 @@ fun ProfileScreen(barbershopId: Int, onChangeBarbershopId: (Int) -> Unit, onNavi
                         Spacer(modifier = Modifier.height(4.dp))
                     }
                     Spacer(modifier = Modifier.height(16.dp))
+                    // Botão de agendamento
+                    Button(
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF795548)),
+                        modifier = Modifier.fillMaxWidth(0.75F),
+                        shape = MaterialTheme.shapes.medium,
+                        onClick = { datePickerDialog.show() }
+                    ) {
+                        Text(text = "Agendar Horário", color = Color.White)
+                    }
+
+                    if (selectedDateTime.isNotEmpty()) {
+                        Text(text = "Agendamento: $selectedDateTime", color = Color.Black, modifier = Modifier.padding(top = 8.dp))
+                    }
                     Button(
 
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF795548)),
