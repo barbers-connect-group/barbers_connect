@@ -84,7 +84,10 @@ class MainActivity : ComponentActivity() {
                     onNavigateToProfile = { navController.navigate("profile") },
                     onNavigateToBarbershops = { navController.navigate("barbershops") },
                     onNavigateToReviews = { navController.navigate("reviews") },
-                    onNavigateToUserProfile = { navController.navigate("userprofile") }
+                    onNavigateToUserProfile = { navController.navigate("userprofile") },
+                    onNavigateToAddReview = { id, name ->
+                        navController.navigate("add_review/$id/$name")
+                    }
                 )
             }
         }

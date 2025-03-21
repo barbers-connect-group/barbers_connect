@@ -2,7 +2,9 @@ package com.example.barbers_connect.ui.barbershop
 
 import android.util.Log
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -20,6 +22,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -35,7 +38,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextDecoration
@@ -43,6 +48,8 @@ import androidx.compose.ui.unit.dp
 import com.example.barbers_connect.R
 import com.example.barbers_connect.model.BarberShop
 import com.example.barbers_connect.service.BarberShopService
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @Composable
 fun ExtendedButton(
@@ -69,120 +76,76 @@ fun BarbershopCard(
     onClickNavigate: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var isImageLoading by remember { mutableStateOf(true) }
+
     Surface(
         shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surfaceVariant,
         modifier = modifier
     ) {
-//        Column (
-////            horizontalAlignment = Alignment.CenterHorizontally,
-//            modifier = modifier
-//                .height(350.dp)
-//                .padding(16.dp)
-//        ){
-//            Row (
-//                verticalAlignment = Alignment.Top,
-//                horizontalArrangement = Arrangement.Center,
-//                modifier = modifier.height(150.dp)
-//            ){
-//                Image(
-//                painter = painterResource(R.drawable.barbearia_mock),
-//                contentDescription = null,
-//                contentScale = ContentScale.Crop,
-//                modifier = modifier.height(50.dp)
-//                )
-//            }
-//            Spacer(Modifier.height(16.dp))
-//            Row (
-//                verticalAlignment = Alignment.Bottom,
-//                modifier = modifier.height(150.dp)
-//            ){
-//                Column (
-//                    horizontalAlignment = Alignment.CenterHorizontally,
-////                    modifier = modifier.height(100.dp)
-//                ){
-//                    Text(
-//                        text = name,
-//                        style = MaterialTheme.typography.titleMedium,
-//                        color = Color(0xFF795548),
-//                    )
-//                    Text(
-//                        text = address,
-//                        style = MaterialTheme.typography.titleMedium,
-//                        color = Color(0xFF795548),
-//                    )
-//                    Spacer(Modifier.height(16.dp))
-//                    Text(
-//                        text = "$startShift - $endShift",
-//                        style = MaterialTheme.typography.titleMedium,
-//                        color = Color(0xFF795548),
-//                    )
-//                    Spacer(Modifier.height(16.dp))
-//                TextButton(onClick = onClickNavigate) {
-//                    Text(
-//                        "Agendar agora",
-//                        color = Color(0xFF795548),
-//                        textDecoration = TextDecoration.Underline
-//                    )
-//                }
-//                ExtendedButton(text = "Agendar agora", color = Color(0xFF795548), onClick = onClickNavigate)
-//            }
-//            }
-
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-//                .padding(16.dp)
+            modifier = Modifier.fillMaxWidth()
         ) {
-            // Row para a Imagem ocupando toda a largura
-            Row(
+            // Image with loading state
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(150.dp)
             ) {
+                // Show placeholder while "loading"
+                if (isImageLoading) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.LightGray)
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    }
+                }
+
+                // Actual image loaded with a side effect to track loading state
                 Image(
-                    painter = painterResource(R.drawable.barbearia_mock),
+                    painter = painterResource(id = R.drawable.barbearia_mock),
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .fillMaxSize()
+                        .onSizeChanged {
+                            // This gets called after layout, so image should be loaded
+                            isImageLoading = false
+                        }
                 )
             }
 
-            Row(
+            // Info section
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(0.7f),
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(16.dp)
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.weight(0.5f)
-                ) {
-                    Text(
-                        text = name,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = Color(0xFF795548),
-                    )
-                    Text(
-                        text = address,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFF795548),
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "$startShift - $endShift",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF795548),
-                    )
-                }
-            }
-            Row(modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp, start = 16.dp, end = 16.dp)
-                .weight(0.3f),
-                verticalAlignment = Alignment.CenterVertically
-            ){
+                Text(
+                    text = name,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color(0xFF795548),
+                )
+                Text(
+                    text = address,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF795548),
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "$startShift - $endShift",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color(0xFF795548),
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Button
                 ExtendedButton(
                     text = "Agendar agora",
                     color = Color(0xFF795548),
@@ -190,13 +153,9 @@ fun BarbershopCard(
                     modifier = Modifier.fillMaxWidth()
                 )
             }
-
         }
-
     }
-
 }
-
 
 @Composable
 fun BarberShopsScreen(
@@ -235,7 +194,10 @@ fun BarberShopsScreen(
             contentPadding = PaddingValues(vertical = 16.dp),
             modifier = modifier
         ) {
-            items(barbershopList.orEmpty()) { barbershop ->
+            items(
+                items = barbershopList.orEmpty(),
+                key = { it.id ?: it.hashCode() }
+            ) { barbershop ->
                 BarbershopCard(
                     name = barbershop.name,
                     address = barbershop.address,

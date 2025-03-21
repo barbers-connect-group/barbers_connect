@@ -18,6 +18,12 @@ import java.io.IOException
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import android.os.Handler
+import android.os.Looper
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import java.io.File
 
 object BarberShopService {
     private val client = OkHttpClient()
@@ -214,4 +220,87 @@ object BarberShopService {
             }
         })
     }
+
+
+    fun createReview(
+        context: Context,
+        barbershopId: Int,
+        description: String,
+        rating: Int,
+        imageFile: File?,
+        callback: (Map<String, Any>) -> Unit
+    ) {
+        val token = UserService.getToken(context)
+
+        val requestBodyBuilder = MultipartBody.Builder()
+            .setType(MultipartBody.FORM)
+            .addFormDataPart("barbershop", barbershopId.toString())
+            .addFormDataPart("description", description)
+            .addFormDataPart("rating", rating.toString())
+
+        // Adiciona a imagem apenas se ela existir
+        imageFile?.let { file ->
+            val imageRequestBody = file.asRequestBody("image/*".toMediaTypeOrNull())
+            requestBodyBuilder.addFormDataPart(
+                "image",
+                file.name,
+                imageRequestBody
+            )
+        }
+
+        val requestBody = requestBodyBuilder.build()
+
+        val request = Request.Builder()
+            .url("https://barbersconnectapi.vercel.app/api/reviews/")
+            .post(requestBody)
+            .header("Authorization", "Token $token")
+            .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                Handler(Looper.getMainLooper()).post {
+                    callback(mapOf(
+                        "message" to "Erro de conexão: ${e.message}",
+                        "status" to "failed"
+                    ))
+                }
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                Handler(Looper.getMainLooper()).post {
+                    if (response.isSuccessful) {
+                        val responseBody = response.body?.string()
+                        if (responseBody != null) {
+                            try {
+                                val json = JSONObject(responseBody)
+                                callback(mapOf(
+                                    "message" to "Avaliação criada com sucesso",
+                                    "status" to "success",
+                                    "data" to json.toString()
+                                ))
+                            } catch (e: Exception) {
+                                callback(mapOf(
+                                    "message" to "Erro ao processar resposta: ${e.message}",
+                                    "status" to "error"
+                                ))
+                            }
+                        } else {
+                            callback(mapOf(
+                                "message" to "Resposta vazia",
+                                "status" to "error"
+                            ))
+                        }
+                    } else {
+                        val errorBody = response.body?.string() ?: "Sem detalhes"
+                        callback(mapOf(
+                            "message" to "Erro: ${response.code}: ${response.message}",
+                            "status" to "error",
+                            "errorDetails" to errorBody
+                        ))
+                    }
+                }
+            }
+        })
+    }
+
 }
